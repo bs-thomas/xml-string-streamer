@@ -10,13 +10,23 @@ class File implements StreamInterface
     private $chunkSize;
     private $chunkCallback;
 
-    public function __construct($mixed, $chunkSize = 16384, $chunkCallback = null)
+    public function __construct($mixed, $chunkSize = 16384, $chunkCallback = null, $options = array())
     {
+        $optionStreamWrapper = isset($options['streamWrapperName']) ? $options['streamWrapperName'] : null;
+
         if (is_string($mixed)) {
             // Account for common stream/URL wrappers before checking if a file exists
             $realPath = $mixed;
             if (preg_match('/^([\w.]+):\/\//', $realPath, $matched)) {
-                if (preg_match('/(http|ftp|php|data|ssh2)/', $matched[1])) {
+                $streamWrappers = array('http', 'ftp', 'php', 'data', 'ssh2');
+
+                if( $optionStreamWrapper !== null ) {
+                    $streamWrappers[] = $optionStreamWrapper;
+                }
+
+                $streamWrappersImploded = implode('|', $streamWrappers);
+
+                if (preg_match("/({$streamWrappersImploded})/", $matched[1])) {
                     // Disable file_exists() check
                     $realPath = null;
                 } else {
